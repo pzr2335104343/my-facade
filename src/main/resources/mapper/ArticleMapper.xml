@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rong.myfacade.mapper.ArticleMapper">
+
+    <resultMap id="BaseResultMap" type="com.rong.myfacade.model.entity.Article">
+        <id property="id" column="id"/>
+        <result property="userId" column="userId"/>
+        <result property="articleTitle" column="articleTitle"/>
+        <result property="articleCover" column="articleCover"/>
+        <result property="articleIntro" column="articleIntro"/>
+        <result property="articleContent" column="articleContent"/>
+        <result property="likeCount" column="likeCount"/>
+        <result property="commentCount" column="commentCount"/>
+        <result property="articleView" column="articleView"/>
+        <result property="isTop" column="isTop"/>
+        <result property="articleStatus" column="articleStatus"/>
+        <result property="createTime" column="createTime"/>
+        <result property="updateTime" column="updateTime"/>
+        <result property="isDelete" column="isDelete"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,userId,articleTitle,articleCover,articleIntro,articleContent,
+        likeCount,commentCount,articleView,isTop,articleStatus,createTime,
+        updateTime,isDelete
+    </sql>
+</mapper>

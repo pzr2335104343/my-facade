@@ -1,0 +1,19 @@
+server:
+  port: 8181
+  servlet:
+    context-path: /api
+    # cookie 30天过期
+    session:
+      cookie:
+        max-age: 2592000
+spring:
+  application:
+    name: my-facade # 服务名称
+  profiles:
+    active: dev
+  config:
+    import: # Boot 3.x 官方推荐写法
+      - optional:nacos:my-facade-dev.yaml?group=dev
+  nacos:
+    config:
+      server-addr: 127.0.0.1:8848
