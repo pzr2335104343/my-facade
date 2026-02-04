@@ -3,6 +3,7 @@ package com.rong.myfacade.model.vo;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 文章视图对象
@@ -53,6 +54,11 @@ public class ArticleVO {
     private String articleContent;
 
     /**
+     * 标签列表
+     */
+    private List<TagVO> tags;
+
+    /**
      * 点赞数
      */
     private Integer likeCount;
@@ -86,4 +92,5 @@ public class ArticleVO {
      * 更新时间
      */
     private Date updateTime;
+
 }

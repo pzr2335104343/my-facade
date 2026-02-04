@@ -1,6 +1,7 @@
 package com.rong.myfacade.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rong.myfacade.annotation.AuthCheck;
 import com.rong.myfacade.common.BaseResponse;
@@ -17,11 +18,14 @@ import com.rong.myfacade.model.dto.article.ArticleUpdateRequest;
 import com.rong.myfacade.model.entity.Article;
 import com.rong.myfacade.model.entity.User;
 import com.rong.myfacade.model.vo.ArticleVO;
+import com.rong.myfacade.model.vo.TagVO;
 import com.rong.myfacade.service.ArticleService;
 import com.rong.myfacade.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 文章 控制层。
@@ -51,6 +55,8 @@ public class ArticleController {
         BeanUtil.copyProperties(articleAddRequest, article);
         article.setUserId(loginUser.getId());
         article.setArticleStatus(StatusConstant.NORMAL);
+        String tags = JSONUtil.toJsonStr(articleAddRequest.getTags());
+        article.setTags(tags);
         boolean result = articleService.save(article);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(article.getId());
@@ -72,6 +78,8 @@ public class ArticleController {
         }
         Article article = new Article();
         BeanUtil.copyProperties(articleUpdateRequest, article);
+        String tags = JSONUtil.toJsonStr(articleUpdateRequest.getTags());
+        article.setTags(tags);
         boolean result = articleService.updateById(article);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
@@ -134,6 +142,36 @@ public class ArticleController {
         long pageSize = articleQueryRequest.getPageSize();
         Page<Article> articlePage = articleService.page(Page.of(pageNum, pageSize),
                 articleService.getQueryWrapper(articleQueryRequest));
+        return ResultUtils.success(articlePage);
+    }
+
+    /**
+     * 根据标签搜索文章
+     */
+    @GetMapping("/list/tags")
+    public BaseResponse<java.util.List<ArticleVO>> searchArticlesByTags(@RequestParam java.util.List<Long> tagIds) {
+        ThrowUtils.throwIf(tagIds == null || tagIds.isEmpty(), ErrorCode.PARAMS_ERROR);
+        java.util.List<Article> articles = articleService.searchByTagIds(tagIds);
+        return ResultUtils.success(articleService.getArticleVOList(articles));
+    }
+
+    /**
+     * 分页获取文章列表(用户浏览)
+     */
+    @PostMapping("/listVO/page")
+    public BaseResponse<Page<Article>> listArticleVOByPage(@RequestBody ArticleQueryRequest articleQueryRequest) {
+        ThrowUtils.throwIf(articleQueryRequest == null, ErrorCode.PARAMS_ERROR);
+        long pageNum = articleQueryRequest.getPageNum();
+        long pageSize = articleQueryRequest.getPageSize();
+        Page<Article> articlePage = articleService.page(Page.of(pageNum, pageSize),
+                articleService.getQueryWrapper(articleQueryRequest));
+        articlePage.getRecords().stream().map(item -> {
+            ArticleVO articleVO = new ArticleVO();
+            BeanUtil.copyProperties(item, articleVO);
+            List<TagVO> tags = JSONUtil.toList(item.getTags(), TagVO.class);
+            articleVO.setTags(tags);
+            return articleVO;
+        });
         return ResultUtils.success(articlePage);
     }
 

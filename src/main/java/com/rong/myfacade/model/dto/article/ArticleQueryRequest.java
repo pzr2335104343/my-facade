@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 文章查询请求
@@ -39,6 +40,11 @@ public class ArticleQueryRequest extends PageRequest implements Serializable {
      * 是否置顶
      */
     private Integer isTop;
+
+    /**
+     * 标签id列表
+     */
+    private List<Long> tagIds;
 
     private static final long serialVersionUID = 1L;
 }

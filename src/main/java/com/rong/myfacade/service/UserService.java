@@ -60,6 +60,6 @@ public interface UserService extends IService<User> {
     /**
      * 根据用户查询条件获取QueryWrapper
      */
-    QueryWrapper getQueryWrapper(UserQueryRequest userQueryRequest);
+    QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
 
 }

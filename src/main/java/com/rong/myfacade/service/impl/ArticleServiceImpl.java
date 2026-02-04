@@ -3,16 +3,20 @@ package com.rong.myfacade.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.rong.myfacade.exception.BusinessException;
 import com.rong.myfacade.exception.ErrorCode;
 import com.rong.myfacade.mapper.ArticleMapper;
+import com.rong.myfacade.mapper.ArticleTagMapper;
 import com.rong.myfacade.mapper.UserMapper;
 import com.rong.myfacade.model.dto.article.ArticleQueryRequest;
 import com.rong.myfacade.model.entity.Article;
+import com.rong.myfacade.model.entity.ArticleTag;
 import com.rong.myfacade.model.entity.User;
 import com.rong.myfacade.model.vo.ArticleVO;
+import com.rong.myfacade.model.vo.TagVO;
 import com.rong.myfacade.service.ArticleService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Resource
     private UserMapper userMapper;
 
+    @Resource
+    private ArticleTagMapper articleTagMapper;
+
     @Override
     public ArticleVO getArticleVO(Article article) {
         if (article == null) {
@@ -50,6 +57,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             }
         }
 
+        // 填充标签信息
+        List<TagVO> tags = JSONUtil.toList(article.getTags(), TagVO.class);
+        articleVO.setTags(tags);
+
         return articleVO;
     }
 
@@ -65,18 +76,22 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .distinct()
                 .collect(Collectors.toList());
 
-        Map<Long, User> userMap = userMapper.selectBatchIds(userIds).stream()
+        Map<Long, User> userMap = userMapper.selectByIds(userIds).stream()
                 .collect(Collectors.toMap(User::getId, user -> user));
 
-        // 填充用户信息
+        // 填充用户信息和标签信息
         return articleList.stream().map(article -> {
             ArticleVO articleVO = new ArticleVO();
             BeanUtil.copyProperties(article, articleVO);
+            // 填充用户信息
             User user = userMap.get(article.getUserId());
             if (user != null) {
                 articleVO.setUserName(user.getUserName());
                 articleVO.setUserAvatar(user.getUserAvatar());
             }
+            // 填充标签信息
+            List<TagVO> tags = JSONUtil.toList(article.getTags(), TagVO.class);
+            articleVO.setTags(tags);
             return articleVO;
         }).collect(Collectors.toList());
     }
@@ -93,6 +108,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Integer isTop = articleQueryRequest.getIsTop();
         String sortField = articleQueryRequest.getSortField();
         String sortOrder = articleQueryRequest.getSortOrder();
+//        List<Long> articleIds = new ArrayList<>();
+//        // 获取符合标签的文章ID
+//        if (articleQueryRequest.getTagIds().size() > 0) {
+//            QueryWrapper<ArticleTag> articleTagQueryWrapper = new QueryWrapper<>();
+//            articleTagQueryWrapper.in("tagId", articleQueryRequest.getTagIds());
+//            List<ArticleTag> articleTags = articleTagMapper.selectList(articleTagQueryWrapper);
+//            articleIds = articleTags.stream().map(ArticleTag::getArticleId).toList();
+//        }
 
         QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("id", id)
@@ -100,7 +123,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 .like(StrUtil.isNotBlank(articleTitle), "articleTitle", articleTitle)
                 .eq("articleStatus", articleStatus)
                 .eq("isTop", isTop)
+//                .in("id", articleIds)
                 .orderBy(StrUtil.isNotBlank(sortField), "ascend".equals(sortOrder), sortField);
+
         return queryWrapper;
     }
 
@@ -111,5 +136,27 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             article.setArticleView(article.getArticleView() + 1);
             this.updateById(article);
         }
+    }
+
+    @Override
+    public List<Article> searchByTagIds(List<Long> tagIds) {
+        if (CollUtil.isEmpty(tagIds)) {
+            return new ArrayList<>();
+        }
+        // 根据标签ID列表查询文章标签关联
+        QueryWrapper<ArticleTag> articleTagQueryWrapper = new QueryWrapper<>();
+        articleTagQueryWrapper.in("tagId", tagIds);
+        List<ArticleTag> articleTags = articleTagMapper.selectList(articleTagQueryWrapper);
+        if (CollUtil.isEmpty(articleTags)) {
+            return new ArrayList<>();
+        }
+        // 获取文章ID列表
+        List<Long> articleIds = articleTags.stream()
+                .map(ArticleTag::getArticleId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 查询文章
+        return this.listByIds(articleIds);
     }
 }

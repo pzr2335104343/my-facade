@@ -34,4 +34,9 @@ public interface ArticleService extends IService<Article> {
      * 增加文章阅读量
      */
     void incrementViewCount(Long articleId);
+
+    /**
+     * 根据标签ID列表搜索文章
+     */
+    List<Article> searchByTagIds(List<Long> tagIds);
 }

@@ -29,6 +29,7 @@ create table if not exists article
     articleCover  varchar(1024)                          null comment '文章封面图',
     articleIntro  varchar(1024)                          null comment '文章简介/摘要',
     articleContent longtext                              not null comment '文章正文内容',
+    tags          varchar(256)                          null comment '文章标签（json数组）',
     likeCount     int        default 0  				 null comment '点赞数',
     commentCount  int        default 0  				 null comment '评论数',
     articleView   bigint      default 0                 not null comment '文章阅读量',
@@ -47,17 +48,14 @@ CREATE TABLE IF NOT EXISTS tag
     id         BIGINT AUTO_INCREMENT COMMENT '标签ID' PRIMARY KEY,
     tagName    VARCHAR(50)                           NOT NULL COMMENT '标签名称',
     tagColor   VARCHAR(20)                           NULL COMMENT '标签颜色（十六进制颜色码）',
-    userId     BIGINT                                 NULL COMMENT '用户ID（NULL表示系统标签）',
-    useCount   INT          DEFAULT 0                 NOT NULL COMMENT '使用次数',
     createTime DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
     updateTime DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     isDelete   TINYINT      DEFAULT 0                 NOT NULL COMMENT '是否删除',
-    UNIQUE KEY uk_tagName_userId (tagName, userId),
-    INDEX idx_userId (userId)
+    UNIQUE KEY uk_tagName (tagName)
 ) COMMENT '标签表' COLLATE = utf8mb4_unicode_ci;
 
 -- 文章-标签关联表
-create table if not exists article_tag_relation
+create table if not exists article_tag
 (
     id            bigint auto_increment comment '关联主键id' primary key,
     articleId     bigint                                 not null comment '文章id，关联article表id',
@@ -79,7 +77,6 @@ CREATE TABLE IF NOT EXISTS comment
     parentId    BIGINT       DEFAULT 0                 NOT NULL COMMENT '父评论ID（0表示顶级评论）',
     content     TEXT                                   NOT NULL COMMENT '评论内容',
     likeCount   INT          DEFAULT 0                 NOT NULL COMMENT '点赞数',
-    status      TINYINT      DEFAULT 1                 NOT NULL COMMENT '状态：0-隐藏，1-正常',
     createTime  DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
     updateTime  DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     isDelete    TINYINT      DEFAULT 0                 NOT NULL COMMENT '是否删除',
@@ -89,12 +86,13 @@ CREATE TABLE IF NOT EXISTS comment
 ) COMMENT '评论表' COLLATE = utf8mb4_unicode_ci;
 
 -- 点赞表
-CREATE TABLE IF NOT EXISTS like_collect
+CREATE TABLE IF NOT EXISTS like_record
 (
     id         BIGINT AUTO_INCREMENT COMMENT 'ID' PRIMARY KEY,
     userId     BIGINT                                 NOT NULL COMMENT '用户ID',
-    targetType TINYINT      DEFAULT 0                 NOT NULL COMMENT '目标类型：0-文章，1-评论',
+    targetType TINYINT      DEFAULT 0                 NOT NULL COMMENT '目标类型：1-文章，2-评论',
     targetId   BIGINT                                 NOT NULL COMMENT '目标ID',
+    status     TINYINT                                NOT NULL COMMENT '0-未点赞，1-已点赞',
     createTime DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
     updateTime DATETIME     DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     isDelete   TINYINT      DEFAULT 0                 NOT NULL COMMENT '是否删除',
